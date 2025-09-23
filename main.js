@@ -1460,57 +1460,64 @@ class ApplicationController {
 
     
 
-    async simulateTypeCharByChar(text, delayMs = 10) {
-        // Save the original string and type one character at a time.
+    async simulateTypeCharByChar(text, delayMs = 1, batchSize = 10) { // Reduced delay and implemented a smart batch system
         const str = String(text ?? "");
 
-        // Hide our windows briefly so the target app regains focus
         try {
             if (windowManager && typeof windowManager.hideAllWindows === 'function') {
                 windowManager.hideAllWindows();
             }
         } catch (e) {}
 
-        const sendChar = (ch) => {
-            return new Promise((resolve, reject) => {
-                // Escape single quote for PowerShell
-                const esc = ch.replace(/'/g, "''");
-                const psCmd = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('${esc}');`;
-                const command = `powershell -NoProfile -WindowStyle Hidden -Command "${psCmd.replace(/"/g, '\\"')}"`;
-                require('child_process').exec(command, { shell: true }, (err) => {
-                    if (err) return reject(err);
-                    resolve();
+        const sendBatch = async (batch) => {
+            try {
+                const escBatch = batch.replace(/'/g, "''");
+                const psCmd = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('${escBatch}');`;
+                const command = `powershell -NoProfile -WindowStyle Hidden -Command \"${psCmd.replace(/\"/g, '\\\"')}\"`;
+                await new Promise((resolve, reject) => {
+                    require('child_process').exec(command, { shell: true }, (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
                 });
-            });
+            } catch (error) {
+                logger.error('Failed to send batch', { batch, error: error.message });
+            }
         };
 
+        let batch = "";
         for (let i = 0; i < str.length; i++) {
             const ch = str[i];
             try {
-                // convert newline to Enter token
                 if (ch === '\n') {
-                    await new Promise((r, rej) => {
-                        const ps = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{ENTER}');`;
-                        require('child_process').exec(`powershell -NoProfile -WindowStyle Hidden -Command "${ps.replace(/"/g, '\\"')}"`, { shell: true }, (e) => (e ? rej(e) : r()));
-                    });
-                } else if (ch === '\r') {
-                    continue;
+                    await sendBatch(batch);
+                    batch = "";
+                    await sendBatch('{ENTER}');
                 } else if (ch === '\t') {
-                    await new Promise((r, rej) => {
-                        const ps = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{TAB}');`;
-                        require('child_process').exec(`powershell -NoProfile -WindowStyle Hidden -Command "${ps.replace(/"/g, '\\"')}"`, { shell: true }, (e) => (e ? rej(e) : r()));
-                    });
+                    await sendBatch(batch);
+                    batch = "";
+                    await sendBatch('{TAB}');
                 } else {
-                    await sendChar(ch);
+                    batch += ch;
+                    if (batch.length >= batchSize) {
+                        await sendBatch(batch);
+                        batch = "";
+                    }
                 }
             } catch (e) {
-                logger.error('Char-by-char send failed', { index: i, char: ch, error: e.message });
+                logger.error('Batch typing failed', { index: i, char: ch, error: e.message });
             }
 
-            if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs));
+            // Smart delay: Simulate human-like typing speed with slight randomness
+            const humanLikeDelay = delayMs + Math.random() * 5; // Add slight randomness to delay
+            if (humanLikeDelay > 0) await new Promise((r) => setTimeout(r, humanLikeDelay));
         }
 
-        logger.info('simulateTypeCharByChar completed', { length: str.length });
+        if (batch.length > 0) {
+            await sendBatch(batch);
+        }
+
+        logger.info('simulateTypeCharByChar completed with smart batch typing', { length: str.length });
         return true;
     }
 

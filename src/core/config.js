@@ -44,12 +44,28 @@ class ConfigManager {
       },
 
       llm: {
+        // Primary LLM configuration - Gemini
         gemini: {
-          model: 'gemini-1.5-flash',
+          model: 'gemini-2.0-flash',
           maxRetries: 3,
           timeout: 30000,
           fallbackEnabled: true,
           enableFallbackMethod: true
+        },
+        // Backup Local LLM configuration (Ollama, LocalAI, etc.)
+        local: {
+          // API type: 'ollama', 'localai', or 'openai-compatible'
+          type: 'ollama',
+          protocol: 'http',
+          host: 'localhost',
+          port: 11434,
+          // Model name - depends on what's available in your local setup
+          // For Ollama: 'llama2', 'codellama', 'mistral', etc.
+          model: 'llama2',
+          timeout: 60000,
+          fallbackEnabled: true,
+          // Optional API key for some local setups
+          apiKey: null
         }
       },
 

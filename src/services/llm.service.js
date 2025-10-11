@@ -1,44 +1,44 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const logger = require('../core/logger').createServiceLogger('LLM');
 const config = require('../core/config');
+const logger = require('../core/logger').createServiceLogger('LLM');
 const { promptLoader } = require('../../prompt-loader');
 
 class LLMService {
   constructor() {
-    this.client = null;
-    this.model = null;
     this.isInitialized = false;
     this.requestCount = 0;
     this.errorCount = 0;
+    this.client = null;
+    this.model = null;
     
     this.initializeClient();
   }
 
-  initializeClient() {
-    const apiKey = config.getApiKey('GEMINI');
-    
-    if (!apiKey || apiKey === 'your-api-key-here') {
-      logger.warn('Gemini API key not configured', { 
-        keyExists: !!apiKey,
-        isPlaceholder: apiKey === 'your-api-key-here'
-      });
-      return;
-    }
-
+  async initializeClient() {
     try {
+      const apiKey = config.getApiKey('GEMINI');
+      if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+        logger.warn('Gemini API key not configured or using placeholder value');
+        return;
+      }
+
+      // Dynamic import of Google Generative AI
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      
       this.client = new GoogleGenerativeAI(apiKey);
       this.model = this.client.getGenerativeModel({ 
-        model: config.get('llm.gemini.model') 
+        model: config.get('llm.gemini.model') || 'gemini-1.5-flash'
       });
-      this.isInitialized = true;
       
-      logger.info('Gemini AI client initialized successfully', {
+      this.isInitialized = true;
+      logger.info('Gemini client initialized successfully', {
         model: config.get('llm.gemini.model')
       });
     } catch (error) {
-      logger.error('Failed to initialize Gemini client', { 
-        error: error.message 
+      logger.error('Failed to initialize Gemini client', {
+        error: error.message,
+        stack: error.stack
       });
+      this.isInitialized = false;
     }
   }
 

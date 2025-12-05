@@ -5,7 +5,7 @@ const os = require('os');
 
 class Logger {
   constructor() {
-    this.logDir = path.join(os.homedir(), '.OpenCluely', 'logs');
+  this.logDir = path.join(os.homedir(), '.StealthAI', 'logs');
     this.setupLogger();
   }
 

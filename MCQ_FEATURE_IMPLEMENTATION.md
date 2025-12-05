@@ -1,7 +1,7 @@
 # MCQ (Multiple Choice Questions) Feature Implementation
 
 ## Overview
-Added MCQ support to OpenCluely as a new skill type alongside the existing DSA functionality.
+Added MCQ support to Stealth AI as a new skill type alongside the existing DSA functionality.
 
 ## Changes Made
 

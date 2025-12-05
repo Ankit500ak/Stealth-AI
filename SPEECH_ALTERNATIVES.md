@@ -1,6 +1,6 @@
 # Speech Recognition Alternatives to Azure
 
-Your OpenCluely application now supports multiple speech recognition options as alternatives to Azure Speech Service.
+Your Stealth AI application now supports multiple speech recognition options as alternatives to Azure Speech Service.
 
 ## 🎯 Available Options
 

@@ -26,7 +26,7 @@ class ApplicationController {
         this.speechAvailable = false;
 
         this.windowConfigs = {
-            main: { title: "OpenCluely" },
+            main: { title: "Stealth AI" },
             chat: { title: "Chat" },
             llmResponse: { title: "AI Response" },
             settings: { title: "Settings" },
@@ -114,7 +114,7 @@ class ApplicationController {
     }
 
     setupGlobalShortcuts() {
-    const shortcuts = {
+        const shortcuts = {
             "CommandOrControl+Shift+S": () => this.triggerScreenshotOCR(),
             // Run replace.js when Ctrl+Shift+R is pressed
             "CommandOrControl+Shift+R": () => {
@@ -247,7 +247,7 @@ class ApplicationController {
     }
 
     setupIPCHandlers() {
-    ipcMain.handle("take-screenshot", (event, options) => this.triggerScreenshotOCR(options));
+        ipcMain.handle("take-screenshot", (event, options) => this.triggerScreenshotOCR(options));
         ipcMain.handle("list-displays", () => captureService.listDisplays());
         ipcMain.handle("capture-area", (event, options) => captureService.captureAndProcess(options));
 
@@ -546,8 +546,8 @@ class ApplicationController {
 
             // Persist and notify
             this.activeSkill = normalized;
-            try { sessionManager.setActiveSkill(this.activeSkill); } catch (e) {}
-            try { if (typeof llmService.setActiveSkill === "function") llmService.setActiveSkill(this.activeSkill); } catch (e) {}
+            try { sessionManager.setActiveSkill(this.activeSkill); } catch (e) { }
+            try { if (typeof llmService.setActiveSkill === "function") llmService.setActiveSkill(this.activeSkill); } catch (e) { }
 
             // Broadcast to renderers and provide explicit activation channels
             windowManager.broadcastToAllWindows("skill-changed", { skill: this.activeSkill });
@@ -652,8 +652,8 @@ class ApplicationController {
 
             // Persist and notify
             this.activeSkill = normalized;
-            try { sessionManager.setActiveSkill(this.activeSkill); } catch (e) {}
-            try { if (typeof llmService.setActiveSkill === "function") llmService.setActiveSkill(this.activeSkill); } catch (e) {}
+            try { sessionManager.setActiveSkill(this.activeSkill); } catch (e) { }
+            try { if (typeof llmService.setActiveSkill === "function") llmService.setActiveSkill(this.activeSkill); } catch (e) { }
 
             windowManager.broadcastToAllWindows("skill-updated", { skill: this.activeSkill });
             windowManager.broadcastToAllWindows("skill-activated", { skill: this.activeSkill });
@@ -664,7 +664,7 @@ class ApplicationController {
 
             // Acknowledge back to sender so renderer knows activation succeeded
             event?.reply?.("skill-update-ack", { success: true, activeSkill: this.activeSkill });
-         });
+        });
 
         ipcMain.on("quit-app", () => {
             logger.info("Quit app requested via IPC (on method)");
@@ -707,7 +707,7 @@ class ApplicationController {
             try {
                 windowManager.broadcastToAllWindows("speech-status", { status: "Speech recognition unavailable", available: false });
                 windowManager.broadcastToAllWindows("speech-availability", { available: false });
-            } catch (e) {}
+            } catch (e) { }
             return;
         }
         const currentStatus = speechService.getStatus();
@@ -1365,11 +1365,11 @@ class ApplicationController {
 
                 const { execSync } = require("child_process");
                 try {
-                  if (process.mainModule && process.mainModule.filename) {
-                    const appPath = process.mainModule.filename;
-                    process.env.CFBundleName = appName.trim();
-                  }
-                } catch (e) {}
+                    if (process.mainModule && process.mainModule.filename) {
+                        const appPath = process.mainModule.filename;
+                        process.env.CFBundleName = appName.trim();
+                    }
+                } catch (e) { }
 
                 if (app.dock) {
                     app.dock.setBadge("");
@@ -1458,7 +1458,7 @@ class ApplicationController {
         }
     }
 
-    
+
 
     async simulateTypeCharByChar(text, delayMs = 1, batchSize = 10) { // Reduced delay and implemented a smart batch system
         const str = String(text ?? "");
@@ -1467,7 +1467,7 @@ class ApplicationController {
             if (windowManager && typeof windowManager.hideAllWindows === 'function') {
                 windowManager.hideAllWindows();
             }
-        } catch (e) {}
+        } catch (e) { }
 
         const sendBatch = async (batch) => {
             try {
@@ -1521,7 +1521,7 @@ class ApplicationController {
         return true;
     }
 
-    
+
 }
 
 const appController = new ApplicationController();

@@ -43,7 +43,7 @@ class CaptureService {
     this.isProcessing = true;
     const startTime = Date.now();
     try {
-  const { image, metadata } = await this.captureScreenshot(options);
+      const { image, metadata } = await this.captureScreenshot(options);
 
       // Crop if area specified
       let finalImage = image;
@@ -68,7 +68,7 @@ class CaptureService {
           timestamp: new Date().toISOString(),
           source: metadata,
           processingTime: Date.now() - startTime
-        , options: options
+          , options: options
         }
       };
     } finally {

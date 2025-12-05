@@ -7,36 +7,14 @@ const logger = {
 };
 
 class MainWindowUI {
-    // --- READ BUTTON: Pure OCR extraction and display ---
-    async readScreenAndShowText() {
-        try {
-            this.showProcessingIndicator('Reading text from screen...');
-                // Request main process to capture screenshot and extract text (OCR only)
-                    const ocrRequestOptions = {
-                        skill: 'text',
-                        scaleMultiplier: 2, // capture at higher resolution for better OCR
-                        ocr: {
-                            psm: '3', // fully automatic page segmentation
-                            retryPsm: '6', // fallback to single block if needed
-                            minConfidence: 65
-                        }
-                    };
-                    const result = await (window.electronAPI.takeScreenshot ? window.electronAPI.takeScreenshot(ocrRequestOptions) : window.electronAPI.invoke && window.electronAPI.invoke('take-screenshot', ocrRequestOptions));
-            this.hideProcessingIndicator();
-            // Always show in a styled, copyable box
-            this.showScreenTextResult(result && result.response ? result.response : 'No text detected or extraction failed.');
-        } catch (err) {
-            this.hideProcessingIndicator();
-            this.showScreenTextResult('Error extracting text: ' + (err?.message || err));
-        }
-    }
+
     // --- TEXT MODE: Capture screenshot, send to API, and display extracted text ---
     async captureAndShowScreenText() {
         try {
             this.showProcessingIndicator('Extracting text from screen...');
-                // Request main process to capture screenshot and process with text skill
-                const ocrOptions = { numeric: true, emojiPreserve: true, psm: 6, whitelist: null };
-                const result = await (window.electronAPI.takeScreenshot ? window.electronAPI.takeScreenshot({ skill: 'text', ocr: ocrOptions }) : window.electronAPI.invoke && window.electronAPI.invoke('take-screenshot', { skill: 'text', ocr: ocrOptions }));
+            // Request main process to capture screenshot and process with text skill
+            const ocrOptions = { numeric: true, emojiPreserve: true, psm: 6, whitelist: null };
+            const result = await (window.electronAPI.takeScreenshot ? window.electronAPI.takeScreenshot({ skill: 'text', ocr: ocrOptions }) : window.electronAPI.invoke && window.electronAPI.invoke('take-screenshot', { skill: 'text', ocr: ocrOptions }));
             // Expect result: { response: string, metadata: object, skill: 'text' }
             this.hideProcessingIndicator();
             if (result && result.response) {
@@ -94,7 +72,7 @@ class MainWindowUI {
         textBox.appendChild(copyBtn);
         textBox.style.display = 'block';
     }
-    
+
     constructor() {
         this.isInteractive = false;
         this.isHidden = false;
@@ -105,8 +83,8 @@ class MainWindowUI {
         this.micButton = null;
         this.isRecording = false;
         this.speechAvailable = false; // track availability
-    this._popoverHideTimeout = null;
-        
+        this._popoverHideTimeout = null;
+
         // Define available skills for navigation
         this.availableSkills = [
             'dsa',
@@ -114,7 +92,7 @@ class MainWindowUI {
             'rephrase',
             'text'
         ];
-        
+
         this.init();
     }
 
@@ -123,26 +101,26 @@ class MainWindowUI {
             this.setupElements();
             this.setupEventListeners();
             this.setupIPC();
-            
+
             // Load current skill from settings
             await this.loadCurrentSkill();
-            
+
             // Load current interaction state
             await this.loadCurrentInteractionState();
-            
+
             // Fetch speech availability
             await this.loadSpeechAvailability();
-            
+
             this.updateSkillSelector();
             this.updateAllElementStates(); // Update all elements with current state
             this.resizeWindowToContent();
-            
+
             logger.info('Main window UI initialized', {
                 component: 'MainWindowUI',
                 skill: this.currentSkill,
                 interactive: this.isInteractive
             });
-            
+
         } catch (error) {
             logger.error('Failed to initialize main window UI', {
                 component: 'MainWindowUI',
@@ -227,7 +205,7 @@ class MainWindowUI {
         if (this.micButton) {
             this.micButton.classList.add('processing');
         }
-        
+
         // Show processing notification
         this.showNotification(`🤖 AI analyzing: "${questionText.substring(0, 30)}..."`, 'info');
     }
@@ -242,7 +220,7 @@ class MainWindowUI {
     showAnswerReady() {
         // Show success notification
         this.showNotification('✅ Answer ready! Check results window.', 'success');
-        
+
         // Brief flash effect
         if (this.micButton) {
             this.micButton.classList.add('success-flash');
@@ -252,7 +230,7 @@ class MainWindowUI {
         }
     }
 
-    
+
 
     async loadCurrentSkill() {
         try {
@@ -313,7 +291,7 @@ class MainWindowUI {
         if (this.micButton) {
             // Always show microphone button, but indicate availability through styling
             this.micButton.style.display = '';
-            
+
             if (this.speechAvailable) {
                 this.micButton.style.opacity = '1';
                 this.micButton.title = '🎤 Voice recognition ready! Click to ask questions';
@@ -343,17 +321,17 @@ class MainWindowUI {
                 isInteractive: this.isInteractive,
                 currentClasses: this.statusDot.className
             });
-            
+
             // Remove both classes first
             this.statusDot.classList.remove('interactive', 'non-interactive');
-            
+
             // Add the appropriate class
             if (this.isInteractive) {
                 this.statusDot.classList.add('interactive');
             } else {
                 this.statusDot.classList.add('non-interactive');
             }
-            
+
             logger.debug('Status dot updated', {
                 component: 'MainWindowUI',
                 interactive: this.isInteractive,
@@ -368,14 +346,14 @@ class MainWindowUI {
         if (this.skillSelector) {
             // Remove both classes first
             this.skillSelector.classList.remove('interactive', 'non-interactive');
-            
+
             // Add the appropriate class
             if (this.isInteractive) {
                 this.skillSelector.classList.add('interactive');
             } else {
                 this.skillSelector.classList.add('non-interactive');
             }
-            
+
             logger.debug('Skill selector state updated', {
                 component: 'MainWindowUI',
                 interactive: this.isInteractive,
@@ -392,17 +370,17 @@ class MainWindowUI {
             this.applyMicVisibility();
             // Remove both classes first
             this.micButton.classList.remove('interactive', 'non-interactive');
-            
+
             // Add the appropriate class
             if (this.isInteractive) {
                 this.micButton.classList.add('interactive');
             } else {
                 this.micButton.classList.add('non-interactive');
             }
-            
+
             // Update button state
             this.micButton.disabled = !this.isInteractive;
-            
+
             logger.debug('Mic button state updated', {
                 component: 'MainWindowUI',
                 interactive: this.isInteractive,
@@ -415,14 +393,14 @@ class MainWindowUI {
         if (this.settingsIndicator) {
             // Remove both classes first
             this.settingsIndicator.classList.remove('interactive', 'non-interactive');
-            
+
             // Add the appropriate class
             if (this.isInteractive) {
                 this.settingsIndicator.classList.add('interactive');
             } else {
                 this.settingsIndicator.classList.add('non-interactive');
             }
-            
+
             logger.debug('Settings indicator state updated', {
                 component: 'MainWindowUI',
                 interactive: this.isInteractive
@@ -447,13 +425,13 @@ class MainWindowUI {
                     // popover is positioned below the bar (top:36px), add that plus its height and a small margin
                     height = Math.max(height, Math.ceil(36 + popRect.height + 8));
                 }
-                
+
                 logger.debug('Resizing window to content', {
                     width,
                     height,
                     component: 'MainWindowUI'
                 });
-                
+
                 window.electronAPI.resizeWindow(width, height);
             }
         }, 100);
@@ -469,9 +447,9 @@ class MainWindowUI {
         this.infoButton = document.getElementById('infoButton');
         this.shortcutsPopover = document.getElementById('shortcutsPopover');
         this.screenshotButton = document.querySelector('.command-item i.fas.fa-camera')?.parentElement;
-        this.readButton = document.getElementById('readButton');
+        // this.readButton = document.getElementById('readButton');
 
-        if (!this.statusDot || !this.skillSelector || !this.skillSelect || !this.micButton || !this.screenshotButton || !this.readButton) {
+        if (!this.statusDot || !this.skillSelector || !this.skillSelect || !this.micButton || !this.screenshotButton) {
             throw new Error('Required UI elements not found');
         }
 
@@ -507,9 +485,9 @@ class MainWindowUI {
                 this.handleSkillActivated(newSkill);
             }
 
-// --- TEXT MODE: Capture screenshot, send to API, and display extracted text ---
+            // --- TEXT MODE: Capture screenshot, send to API, and display extracted text ---
 
-    });
+        });
 
         // Check for required elements (settingsIndicator is optional)
         if (this.settingsIndicator) {
@@ -525,7 +503,7 @@ class MainWindowUI {
             if (!this.isInteractive) {
                 return; // Don't do anything if not interactive
             }
-            
+
             // Speech is available, toggle recording
             if (this.isRecording) {
                 window.electronAPI.stopSpeechRecognition();
@@ -539,7 +517,7 @@ class MainWindowUI {
         if (this.languageSelect) {
             // Set default to C++ if no value is set
             this.languageSelect.value = 'cpp';
-            
+
             // Initialize with current setting
             if (window.electronAPI && window.electronAPI.getSettings) {
                 window.electronAPI.getSettings().then(settings => {
@@ -656,7 +634,7 @@ class MainWindowUI {
                     });
                 }
             });
-            
+
             // Global keyboard shortcuts
             document.addEventListener('keydown', (e) => {
                 if (e.altKey && e.key === 'r' && this.isInteractive) {
@@ -670,15 +648,15 @@ class MainWindowUI {
                 }
             });
         }
-        
+
         // Also listen via the api interface for backup
         if (window.api) {
-            
+
             window.api.receive('interaction-mode-changed', (interactive) => {
                 logger.debug('Interaction mode changed via api:', interactive);
                 this.handleInteractionModeChanged(interactive);
             });
-            
+
             window.api.receive('skill-updated', (data) => {
                 logger.info('Skill updated event received from main process:', data);
                 if (data && data.skill) {
@@ -690,7 +668,7 @@ class MainWindowUI {
                     logger.warn('Skill updated event received but no skill data found:', data);
                 }
             });
-            
+
             // Listen for skill updates from settings window  
             window.api.receive('update-skill', (skill) => {
                 logger.info('Direct skill update received from settings:', skill);
@@ -699,10 +677,10 @@ class MainWindowUI {
         } else {
             logger.error('window.api not available - event listeners not set up!');
         }
-        
+
         // Keyboard shortcuts
         this.setupKeyboardShortcuts();
-        
+
         // Settings shortcut
         this.setupSettingsShortcut();
     }
@@ -711,7 +689,7 @@ class MainWindowUI {
         const skill = data.skill || data.metadata?.skill || 'General';
         const skillNames = {
             'dsa': 'DSA',
-            'behavioral': 'Behavioral', 
+            'behavioral': 'Behavioral',
             'sales': 'Sales',
             'presentation': 'Presentation',
             'data-science': 'Data Science',
@@ -720,9 +698,9 @@ class MainWindowUI {
             'system-design': 'System Design',
             'negotiation': 'Negotiation'
         };
-        
+
         const displaySkill = skillNames[skill] || skill.toUpperCase();
-        
+
         logger.info('LLM response received', {
             component: 'MainWindowUI',
             skill: skill,
@@ -745,7 +723,7 @@ class MainWindowUI {
                     this.showHiddenIndicator();
                 }
             }
-            
+
             // Handle Cmd + Arrow keys based on interaction mode
             if (e.metaKey && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 e.preventDefault();
@@ -764,7 +742,7 @@ class MainWindowUI {
                     this.moveWindow(e.key);
                 }
             }
-            
+
             // Alt+A is handled globally by the main process
             // No need to handle it here since it needs to work even when windows are non-interactive
         });
@@ -776,10 +754,10 @@ class MainWindowUI {
             newState: interactive,
             previousState: this.isInteractive
         });
-        
+
         // Update the internal state
         this.isInteractive = interactive;
-        
+
         // Update all UI elements to reflect the new state
         this.updateAllElementStates();
 
@@ -787,10 +765,10 @@ class MainWindowUI {
         if (!this.isInteractive && this.shortcutsPopover && this.shortcutsPopover.style.display !== 'none') {
             this.hideShortcutsPopover();
         }
-        
+
         // Update skill selector tooltip
         this.updateSkillSelector();
-        
+
         logger.info('Interaction mode change completed', {
             component: 'MainWindowUI',
             interactive: this.isInteractive,
@@ -802,16 +780,16 @@ class MainWindowUI {
     handleSkillChanged(data) {
         const oldSkill = this.currentSkill;
         this.currentSkill = data.skill;
-        
+
         logger.info('Handling skill change', {
             component: 'MainWindowUI',
             oldSkill: oldSkill,
             newSkill: data.skill,
             skillSelectorExists: !!this.skillSelector
         });
-        
+
         this.updateSkillSelector();
-        
+
         logger.info('Skill changed successfully', {
             component: 'MainWindowUI',
             skill: data.skill
@@ -821,7 +799,7 @@ class MainWindowUI {
     handleSkillActivated(skillName) {
         this.currentSkill = skillName;
         this.updateSkillSelector();
-        
+
         logger.info('Skill activated', {
             component: 'MainWindowUI',
             skill: skillName
@@ -840,10 +818,10 @@ class MainWindowUI {
             this.micButton.classList.add('recording');
             this.micButton.title = '🔴 LISTENING... Click to stop or just start speaking!';
         }
-        
+
         // Show listening indicator
         this.showListeningIndicator();
-        
+
         logger.debug('🎤 Voice recording started - ready for questions!', { component: 'MainWindowUI' });
     }
 
@@ -853,10 +831,10 @@ class MainWindowUI {
             this.micButton.classList.remove('recording');
             this.micButton.title = '🎤 Voice recognition ready! Click to start listening for questions';
         }
-        
+
         // Hide listening indicator
         this.hideListeningIndicator();
-        
+
         logger.debug('🔇 Voice recording stopped', { component: 'MainWindowUI' });
     }
 
@@ -885,7 +863,7 @@ class MainWindowUI {
             `;
             document.body.appendChild(indicator);
         }
-        
+
         indicator.innerHTML = `
             <div style="display: flex; align-items: center; gap: 8px;">
                 <div style="width: 8px; height: 8px; background: #ff4757; border-radius: 50%; animation: blink 1s infinite;"></div>
@@ -906,7 +884,7 @@ class MainWindowUI {
         const skillNames = {
             'dsa': 'DSA',
             'mcq': 'MCQ',
-            'behavioral': 'Behavioral', 
+            'behavioral': 'Behavioral',
             'sales': 'Sales',
             'presentation': 'Presentation',
             'data-science': 'Data Science',
@@ -915,19 +893,19 @@ class MainWindowUI {
             'system-design': 'System Design',
             'negotiation': 'Negotiation'
         };
-        
+
         logger.info('Updating skill selector', {
             component: 'MainWindowUI',
             currentSkill: this.currentSkill,
             skillSelectorExists: !!this.skillSelector,
             skillSelectExists: !!this.skillSelect
         });
-        
+
         if (!this.skillSelect) {
             logger.error('Skill select element not found!');
             return;
         }
-        
+
         // Update the selected value in the dropdown
         if (this.skillSelect.value !== this.currentSkill) {
             this.skillSelect.value = this.currentSkill;
@@ -945,12 +923,12 @@ class MainWindowUI {
         // Add visual feedback for skill change
         this.animateSkillChange();
     }
-    
+
     updateCodingLanguageSelector() {
         // Skills that require programming language selection
         const skillsRequiringLanguage = ['dsa'];
         const requiresLanguage = skillsRequiringLanguage.includes(this.currentSkill);
-        
+
         if (this.codingLanguageSelect) {
             const languageSelector = document.getElementById('languageSelector');
             if (languageSelector) {
@@ -969,7 +947,7 @@ class MainWindowUI {
         if (this.skillSelector) {
             this.skillSelector.style.transform = 'scale(1.1)';
             this.skillSelector.style.transition = 'transform 0.2s ease';
-            
+
             setTimeout(() => {
                 this.skillSelector.style.transform = 'scale(1)';
             }, 200);
@@ -977,17 +955,17 @@ class MainWindowUI {
     }
 
     navigateSkill(direction) {
-        
+
         if (!this.isInteractive) {
             return;
         }
-        
+
         const currentIndex = this.availableSkills.indexOf(this.currentSkill);
         if (currentIndex === -1) {
             logger.error('Current skill not found in available skills array');
             return;
         }
-        
+
         // Calculate new index with wrapping
         let newIndex = currentIndex + direction;
         if (newIndex >= this.availableSkills.length) {
@@ -995,13 +973,13 @@ class MainWindowUI {
         } else if (newIndex < 0) {
             newIndex = this.availableSkills.length - 1; // Wrap to end
         }
-        
+
         const newSkill = this.availableSkills[newIndex];
-        
+
         // Update skill locally and notify main process
         this.currentSkill = newSkill;
         this.updateSkillSelector();
-        
+
         // Save the skill change via IPC
         if (window.electronAPI && window.electronAPI.updateActiveSkill) {
             window.electronAPI.updateActiveSkill(newSkill).then(() => {
@@ -1017,7 +995,7 @@ class MainWindowUI {
                 });
             });
         }
-        
+
         // Show visual feedback
         this.showSkillChangeNotification(newSkill, direction);
     }
@@ -1025,7 +1003,7 @@ class MainWindowUI {
     showSkillChangeNotification(skill, direction) {
         const skillNames = {
             'dsa': 'DSA',
-            'behavioral': 'Behavioral', 
+            'behavioral': 'Behavioral',
             'sales': 'Sales',
             'presentation': 'Presentation',
             'data-science': 'Data Science',
@@ -1034,10 +1012,10 @@ class MainWindowUI {
             'system-design': 'System Design',
             'negotiation': 'Negotiation'
         };
-        
+
         const displayName = skillNames[skill] || skill.toUpperCase();
         const arrow = direction > 0 ? '↓' : '↑';
-        
+
         // Create temporary notification
         const notification = document.createElement('div');
         notification.className = 'skill-change-notification';
@@ -1057,14 +1035,14 @@ class MainWindowUI {
             opacity: 0;
             transition: opacity 0.2s ease;
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Animate in
         setTimeout(() => {
             notification.style.opacity = '1';
         }, 10);
-        
+
         // Remove after 1 second
         setTimeout(() => {
             notification.style.opacity = '0';
@@ -1089,7 +1067,7 @@ class MainWindowUI {
     toggleInteractiveMode() {
         this.isInteractive = !this.isInteractive;
         this.updateAllElementStates();
-        
+
         logger.debug('Interactive mode toggled', {
             component: 'MainWindowUI',
             interactive: this.isInteractive
@@ -1098,11 +1076,11 @@ class MainWindowUI {
 
     moveWindow(direction) {
         const moveDistance = 20; // pixels
-        
+
         if (window.electronAPI && window.electronAPI.moveWindow) {
             let deltaX = 0, deltaY = 0;
-            
-            switch(direction) {
+
+            switch (direction) {
                 case 'ArrowUp':
                     deltaY = -moveDistance;
                     break;
@@ -1116,7 +1094,7 @@ class MainWindowUI {
                     deltaX = moveDistance;
                     break;
             }
-            
+
             window.electronAPI.moveWindow(deltaX, deltaY);
             logger.debug('Moving window', {
                 component: 'MainWindowUI',
@@ -1132,21 +1110,20 @@ class MainWindowUI {
 
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 p-4 rounded-lg text-white z-50 ${
-            type === 'error' ? 'bg-red-600' : 
+        notification.className = `fixed top-4 right-4 p-4 rounded-lg text-white z-50 ${type === 'error' ? 'bg-red-600' :
             type === 'success' ? 'bg-green-600' :
-            'bg-blue-600'
-        }`;
+                'bg-blue-600'
+            }`;
         notification.textContent = message;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.parentNode.removeChild(notification);
             }
         }, 5000);
-        
+
         logger.debug('Notification shown', {
             component: 'MainWindowUI',
             message,
@@ -1181,15 +1158,15 @@ class MainWindowUI {
                 Web Speech API is initializing. Please try again in a moment.
             </div>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.parentNode.removeChild(notification);
             }
         }, 4000);
-        
+
         logger.debug('Speech unavailable notification shown', {
             component: 'MainWindowUI'
         });
@@ -1198,10 +1175,10 @@ class MainWindowUI {
     async showGeminiConfig() {
         try {
             const status = await window.electronAPI.getGeminiStatus();
-            
+
             const modal = this.createGeminiConfigModal(status);
             document.body.appendChild(modal);
-            
+
             logger.debug('Gemini config modal shown', { component: 'MainWindowUI' });
         } catch (error) {
             logger.error('Failed to show Gemini config', {
@@ -1261,13 +1238,13 @@ class MainWindowUI {
             this.showNotification('Please enter an API key', 'error');
             return;
         }
-        
+
         try {
             const result = await window.electronAPI.setGeminiApiKey(apiKey);
             if (result.success) {
                 this.showNotification('Gemini API key configured successfully!', 'success');
                 document.querySelector('.fixed').remove();
-                
+
                 logger.info('Gemini API key configured', { component: 'MainWindowUI' });
             } else {
                 this.showNotification(`Configuration failed: ${result.error}`, 'error');
@@ -1326,17 +1303,17 @@ class MainWindowUI {
                 logger.error('electronAPI or showSettings not available');
                 return;
             }
-            
+
             // Add visual feedback
             if (this.settingsIndicator) {
                 this.settingsIndicator.style.transform = 'scale(1.1)';
                 this.settingsIndicator.style.transition = 'transform 0.2s ease';
-                
+
                 setTimeout(() => {
                     this.settingsIndicator.style.transform = 'scale(1)';
                 }, 200);
             }
-            
+
             logger.info('Settings window opened', { component: 'MainWindowUI' });
         } catch (error) {
             logger.error('Failed to open settings', {
@@ -1368,7 +1345,7 @@ class MainWindowUI {
             document.body.removeChild(menu);
         });
 
-        const quitOption = this.createMenuItem('Quit OpenCluely', 'fa-power-off', () => {
+    const quitOption = this.createMenuItem('Quit Stealth AI', 'fa-power-off', () => {
             if (window.electronAPI) {
                 window.electronAPI.quitApp();
             }
@@ -1425,8 +1402,8 @@ class MainWindowUI {
 
     toggleShortcutsPopover() {
         if (!this.shortcutsPopover) return;
-    const isOpen = this.shortcutsPopover.classList.contains('is-open');
-    if (!isOpen) {
+        const isOpen = this.shortcutsPopover.classList.contains('is-open');
+        if (!isOpen) {
             this.showShortcutsPopover();
         } else {
             this.hideShortcutsPopover();
@@ -1439,16 +1416,16 @@ class MainWindowUI {
             clearTimeout(this._popoverHideTimeout);
             this._popoverHideTimeout = null;
         }
-    this.shortcutsPopover.classList.add('is-open');
+        this.shortcutsPopover.classList.add('is-open');
         // Resize main window to fit popover
         setTimeout(() => this.resizeWindowToContent(), 50);
     }
 
     hideShortcutsPopover() {
         if (!this.shortcutsPopover) return;
-    this.shortcutsPopover.classList.remove('is-open');
-    // resize back to compact after transition
-    setTimeout(() => this.resizeWindowToContent(), 130);
+        this.shortcutsPopover.classList.remove('is-open');
+        // resize back to compact after transition
+        setTimeout(() => this.resizeWindowToContent(), 130);
     }
 
     queueHideShortcutsPopover() {
@@ -1459,21 +1436,21 @@ class MainWindowUI {
 
 
 
-async copyScreenTextToClipboard(text) {
-    if (!text) return;
-    if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-        try {
-            await navigator.clipboard.writeText(text);
-            this.showNotification('Text copied to clipboard!', 'success');
-        } catch (err) {
-            this.showNotification('Failed to copy text: ' + (err?.message || err), 'error');
+    async copyScreenTextToClipboard(text) {
+        if (!text) return;
+        if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            try {
+                await navigator.clipboard.writeText(text);
+                this.showNotification('Text copied to clipboard!', 'success');
+            } catch (err) {
+                this.showNotification('Failed to copy text: ' + (err?.message || err), 'error');
+            }
+        } else {
+            this.showNotification('Clipboard API not supported in this environment.', 'error');
         }
-    } else {
-        this.showNotification('Clipboard API not supported in this environment.', 'error');
     }
-}
 
-// Initialize when DOM is ready
+    // Initialize when DOM is ready
 }
 
 let mainWindowUI;
@@ -1481,9 +1458,9 @@ if (typeof document !== 'undefined') {
     // Add immediate visual indicator that script is loading
     const style = document.createElement('style');
     document.head.appendChild(style);
-    
+
     document.addEventListener('DOMContentLoaded', () => {
-                
+
         mainWindowUI = new MainWindowUI();
         // Make it globally accessible for debugging
         window.mainWindowUI = mainWindowUI;
